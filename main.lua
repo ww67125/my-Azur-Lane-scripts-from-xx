@@ -1,21 +1,29 @@
+--匹配编辑框中的数字
+local function matchnum(edit)
+	a,b=string.find(edit,"%d+")
+	sysLog("a"..a.."b"..b)
+	c=string.sub(edit,a,b)
+	sysLog(c)
+	return tonumber(c)
+end
 --拖动地图到合适位置
 --向上拖动
 local function touchMoveUp()
   mSleep(1500)
   touchDown(1, 900, 300)
   mSleep(200+math.random(100))
-  touchMove(1, 900, 100)
+  touchMove(1, 900, 150)
   mSleep(200+math.random(100))
-  touchUp(1, 900, 100)  
+  touchUp(1, 900, 150)  
 end
 --向下拖动
 local function touchMoveDown()
   mSleep(1500)
   touchDown(1, 900, 300)
   mSleep(200+math.random(100))
-  touchMove(1, 900, 500)
+  touchMove(1, 900, 450)
   mSleep(200+math.random(100))
-  touchUp(1, 900, 500)  
+  touchUp(1, 900, 450)  
 end
 
 
@@ -349,8 +357,8 @@ local function checkelse()
     sysLog("规避")
     tap(avoid()[2],avoid()[3])
   elseif checkpublic() then
-    sysLog("公告")
-    closepublic()
+    sysLog("公告") 
+		closepublic()
   elseif index()[1] then
     sysLog("主页面")
     attack(index()[2],index()[3])
@@ -361,48 +369,53 @@ local function checkelse()
 end
 --寻找主力
 local function findmainship(ltx,lty,rbx,rby)
-  x, y = findColor({ltx, lty, rbx, rby}, 
-    "0|0|0x831831,63|46|0x5a555b,-7|75|0xded6de",
-    95, 0, 0, 0)
-  if x > -1 then
-    return {true,x+10,y+40}
-  else
-    return {false,0,0}
-  end
+local lock=1
+		x, y = findColor({ltx, lty, rbx, rby}, 
+			"0|0|0x831831,63|46|0x5a555b,-7|75|0xded6de",
+			95, 0, 0, 0)
+		if x > -1 then
+			return {true,x+10,y+40,lock}
+		else
+			return {false,0,0}
+		end
+
 end
 --寻找侦查
 local function findReconship(ltx,lty,rbx,rby)
+local lock=2
   sysLog(ltx..lty..rbx..rby)
   x, y = findColor({ltx,lty,rbx,rby}, 
-    "0|0|0x634931,25|1|0xe6e7e6,55|30|0x84715a,0|20|0xe6e7e6",
-    95, 0, 0, 0)
+	"0|0|0xe6e7e6,59|12|0x847563,1|-21|0x5a3d29",
+	96, 0, 0, 0)
   if x > -1 then
     sysLog("reshipx:"..x)
     sysLog("reshipy:"..y)
-    return {true,x+50,y+10}
+    return {true,x+50,y,lock}
   else
     return {false,0,0}
   end
 end
 --寻找航母
 local function findCVA(ltx,lty,rbx,rby)
+local lock=3
   x, y = findColor({ltx,lty,rbx,rby}, 
     "0|0|0x295450,11|0|0xe1cb99,23|-11|0x145e57",
     96, 0, 0, 0)
   if x > -1 then
-    return {true,x,y+20}
+    return {true,x,y+20,lock}
   else
     return {false,0,0}
   end
 end
 --寻找boss
 local function findBoss(ltx,lty,rbx,rby)
+local lock=4
   x, y = findColor({ltx,lty,rbx,rby}, 
     "0|0|0xff4d52,17|-17|0x422431,39|-5|0xee4d52,17|25|0x7b0410",
     95, 0, 0, 0)
   if x > -1 then
-    return {true,x+50,y+10}
-  elseif battlcount>3 then
+    return {true,x+50,y+10,lock}
+  elseif battlcount>3 or battlcount==3 then
     local st,va=coroutine.resume(co)
     if va then 
       mSleep(1500)
@@ -416,11 +429,12 @@ local function findBoss(ltx,lty,rbx,rby)
 end
 --寻找物资船
 local function findMaterialship(ltx,lty,rbx,rby)
+local lock=5
   x, y = findColor({ltx,lty,rbx,rby}, 
     "0|0|0xd6b25a,11|1|0xd6c273,35|-34|0x635d63,40|-46|0x9c455a",
     95, 0, 0, 0)
   if x > -1 then
-    return {true,x+30,y}
+    return {true,x+30,y,lock}
   else
     return {false,0,0}
   end
@@ -450,36 +464,39 @@ end
 --寻找自己
 local function findme()
   x, y = findColor({0, 0, 1919, 1079}, 
-    "0|0|0xf8efbe,-7|8|0xd7823e,-24|19|0xa64b4b,-27|25|0x701e1e",
-    95, 0, 0, 0)
+	"0|0|0x008e31,32|0|0x005921,1|22|0x19ff6b,31|20|0x7bffa4",
+	95, 0, 0, 0)
   if x > -1 then
-    return {true,x-60,y+200}
+    return {true,x+30,y+300}
   else
     return {false,0,0}             
   end
 end
 --自律
 local function selfdiscipline(selfdis)
+	
+	if selfdisflag then
   sysLog("判断自律中:"..selfdis)
-  if tonumber(selfdis)==0 then
-    sysLog("选择开启自律")
-    local color = getColor(155,65); --获取(100,100)的颜色值，赋值给color变量
-    sysLog("自律颜色数值："..color)
-    if color == 5398883 then   --未自律
-      sysLog("没有自律")
-      local selfrandom=math.random(-20,20)
-      tap(209+selfrandom,80+selfrandom)	
-    end
-  else
-    sysLog("选择关闭自律")
-    local color = getColor(147,64); --获取(100,100)的颜色值，赋值给color变量
-    if color == 15133670 then   --自律中
-      sysLog("自律中")
-      local selfrandom=math.random(-20,20)
-      tap(209+selfrandom,80+selfrandom)	
-    end
+		if tonumber(selfdis)==0 then
+			sysLog("选择开启自律")
+			local color = getColor(155,65); --获取(100,100)的颜色值，赋值给color变量
+			sysLog("自律颜色数值："..color)
+			if color == 16777215 then   --未自律
+				sysLog("没有自律")
+				local selfrandom=math.random(-20,20)
+				tap(209+selfrandom,80+selfrandom)	
+				selfdisflag=false
+			end
+		else
+			sysLog("选择关闭自律")
+			local color = getColor(147,64); --获取(100,100)的颜色值，赋值给color变量
+			if color ~= 16777215 then   --自律中
+				sysLog("自律中")
+				local selfrandom=math.random(-20,20)
+				tap(209+selfrandom,80+selfrandom)	
+			end
+		end
   end
-  
 end
 --战斗出击
 local function battlestart()
@@ -506,24 +523,28 @@ local function checkbattle()
 end
 --阻挡方案
 local function stopservice(targetx,targety,findfunction)
+
   sysLog("进入阻挡方案")
-  if findme()[2]==myx and findme()[3]==myy then
+  if findme()[2]<myx+10 and findme()[2]>myx-10 and findme()[3]<myy+30 and findme()[3]>myy-30 then
     sysLog("有阻挡无法到达")
+		publicLock=findfunction[4]
+		sysLog("publicLock:"..publicLock)
     if findme()[2]>targetx then
-      ltx=targetx-100
-      rbx=findme()[2]+100
+      ltx=targetx
+      rbx=findme()[2]
     else
-      ltx=findme()[2]-100
-      rbx=targetx+100
+      ltx=findme()[2]
+      rbx=targetx
     end
     if findme()[3]>targety then
-      lty=targety-100
-      rby=findme()[3]+100
+      lty=targety
+      rby=findme()[3]
     else
-      lty=findme()[3]-100
-      rby=targety+100
+      lty=findme()[3]
+      rby=targety
     end
-    return obstructservice(ltx,lty,rbx,rby)
+		sysLog(ltx..lty..rbx..rby)
+		obstructservice(ltx,lty,rbx,rby)
   else
     sysLog("遭到轰炸了，继续执行")
     tap(targetx,targety)
@@ -537,11 +558,13 @@ local function battleservice(findfunction)
   local positionx=anytable[2]+findmorerandom
   local positiony=anytable[3]+findmorerandom
   sysLog(positionx..","..positiony)
-  mSleep(3500)
+  mSleep(4000)
   while true do
     
     if battlestart()[1] then
-      sysLog("点击开始战斗")
+      
+			mSleep(1000)
+			sysLog("点击开始战斗")
       attack(battlestart()[2],battlestart()[3])
       
       while true do
@@ -554,6 +577,8 @@ local function battleservice(findfunction)
           sysLog("结束战斗")
           attack(finishbattle()[2],finishbattle()[3])
 					battlcount=battlcount+1
+					ltx,lty,rbx,rby=0,0,1919,1079
+					publicLock=0
           break
         else
           
@@ -562,11 +587,10 @@ local function battleservice(findfunction)
       end
       break
     elseif findme()[1] then
-      return stopservice(anytable[2],anytable[3],findfunction)
+			stopservice(anytable[2],anytable[3],findfunction)
       
     else
       sysLog("查找其他问题")
-      tap(positionx,positiony)
       checkelse()
       num=num+1
       if num>5 then
@@ -599,7 +623,8 @@ local function obstructservice(ltx,lty,rbx,rby)
   elseif findBoss(ltx,lty,rbx,rby)[1] then
     sysLog("boss")
     battleservice(findBoss(ltx,lty,rbx,rby))
-    battlefinish=false
+    battlefinish=true
+		sysLog("小关战斗已经结束")
   elseif findmainship(ltx,lty,rbx,rby)[1] then
     sysLog("主力")
     battleservice(findmainship(ltx,lty,rbx,rby))
@@ -615,13 +640,16 @@ local function obstructservice(ltx,lty,rbx,rby)
     battleservice(findMaterialship(ltx,lty,rbx,rby))
   else
     sysLog("什么都没找到")
+		checkelse()
     coroutine.resume(co)
     mSleep(1500)
   end
 end
 --寻路逻辑
 local function findservice()
-  local ltx,lty,rbx,rby=0,0,1919,1079
+	
+	battlcount=0
+	selfdisflag=true
   --拖动协同程序
   co=coroutine.create(function()
       while true do
@@ -640,9 +668,10 @@ local function findservice()
       end
     end
   )
+	
   while true do
-		battlcount=0
-    local battlefinish=false
+		
+		battlefinish=false
     sysLog("进入主逻辑")
     obstructservice(ltx,lty,rbx,rby)
     if battlefinish then
@@ -650,8 +679,9 @@ local function findservice()
     end
   end
 end
-
-
+myx,myy=2000,2000
+ltx,lty,rbx,rby=0,0,1919,1079
+publicLock=0
 init("0", 1); --以当前应用 Home 键在右边初始化
 --while true do
 --	local color=getColor(65,151)
@@ -662,6 +692,7 @@ st,result=showUI("ui.json")
 
 start()
 --sysLog(searchchap())
+
 
 while true do
   
@@ -675,11 +706,18 @@ while true do
     local chapflag=changechap(result["ComboBox1"]+1,newsearchchap())
     
     if chapflag then
+			local finishcount=0
+			while finishcount<matchnum(result["Edit1"]) do
+			mSleep(2000)
       selectlevel(result["ComboBox1"]+1,result["ComboBox2"]+1)
       shipattack()
       mSleep(500)
       shipattack()
-      findservice()
+			
+			sysLog("剩余"..(matchnum(result["Edit1"])-finishcount-1).."次")
+			findservice()
+			finishcount=finishcount+1
+			end
       break
     else
       checkelse()
@@ -708,7 +746,7 @@ end
 --getcolor返回数字
 --找船界面需要位移
 --没有检测到是否进入战斗
---主力和侦查舰都找不到
+--主力和侦查舰都找不到 主力解决 侦察舰问题很大
 --章节转换错误
 --没有自律
 --是否直接在战斗界面
