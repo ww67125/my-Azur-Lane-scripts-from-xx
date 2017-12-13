@@ -34,9 +34,9 @@ local function checkhard()
     "0|0|0xf7f3f7,7|-4|0x102042,2|-29|0x73717b,-14|-34|0x001029",
     95, 0, 0, 0)
   if x > -1 then
-    return true
+    return {true,x,y}
   else
-    return false
+    return {false}
   end
 end
 
@@ -307,10 +307,9 @@ local function shipattack()
   while true do
     point = findColors({0, 0, 1919, 1079}, 
       {
-        {x=0,y=0,color=0xf7db4a},
-        {x=40,y=9,color=0x846d29},
-        {x=54,y=29,color=0xffffff},
-        {x=64,y=39,color=0xffb221}
+        {x=0,y=0,color=0x9c3d08},
+        {x=-26,y=12,color=0xffdb4a},
+        {x=-55,y=17,color=0xffffff}
       },
       95, 0, 0, 0)
     if #point ~= 0 then
@@ -379,10 +378,10 @@ local function checkelse()
     start()
   elseif loss()[1] then
     sysLog("断连")
-    tap(loss()[2],loss()[3])
+    tap(loss()[2]+math.random(-5,5),loss()[3]+math.random(-5,5))
   elseif avoid()[1] then
     sysLog("规避")
-    tap(avoid()[2],avoid()[3])
+    tap(avoid()[2]+math.random(-5,5),avoid()[3]+math.random(-5,5))
   elseif checkpublic() then
     sysLog("公告") 
     closepublic()
@@ -413,7 +412,7 @@ local function findReconship(ltx,lty,rbx,rby)
   sysLog(ltx..lty..rbx..rby)
   x, y = findColor({ltx,lty,rbx,rby}, 
     "0|0|0xe6e7e6,-25|14|0xe6e3e6,32|28|0x847563,-57|33|0x4a4552",
-    95, 0, 0, 0)
+    96, 0, 0, 0)
   if x > -1 then
     sysLog("reshipx:"..x)
     sysLog("reshipy:"..y)
@@ -551,12 +550,12 @@ local function checkbattle()
   end
 end
 --阻挡方案
-local function stopservice(targetx,targety,findfunction)
+local function stopservice(targetx,targety)
   
   sysLog("进入阻挡方案")
   if findme()[2]<myx+10 and findme()[2]>myx-10 and findme()[3]<myy+30 and findme()[3]>myy-30 then
     sysLog("有阻挡无法到达")
-    publicLock=findfunction[4]
+    
     sysLog("publicLock:"..publicLock)
     if findme()[2]>targetx then
       ltx=targetx
@@ -573,10 +572,11 @@ local function stopservice(targetx,targety,findfunction)
       rby=targety
     end
     sysLog(ltx..lty..rbx..rby)
-    obstructservice(ltx,lty,rbx,rby)
+    stopflag=true
   else
     sysLog("遭到轰炸了，继续执行")
     tap(targetx,targety)
+    mSleep(1000)
   end
 end
 --准备战斗
@@ -612,6 +612,7 @@ local function preparebattle()
 end
 --进入战斗逻辑
 local function battleservice(findfunction)
+  stopflag=false
   local anytable=findfunction
   local num=0
   local num1=0
@@ -619,7 +620,7 @@ local function battleservice(findfunction)
   local positionx=anytable[2]+findmorerandom
   local positiony=anytable[3]+findmorerandom
   sysLog(positionx..","..positiony)
-  mSleep(4000)
+  mSleep(3000)
   while true do
     
     if battlestart()[1] then
@@ -651,7 +652,10 @@ local function battleservice(findfunction)
     elseif findme()[1] then
       num1=num1+1
       if num1 <5 then
-        stopservice(anytable[2],anytable[3],findfunction)
+        stopservice(anytable[2],anytable[3])
+        if stopflag then
+          break
+        end
       else
         break
       end
@@ -659,7 +663,7 @@ local function battleservice(findfunction)
       sysLog("查找其他问题")
       checkelse()
       num=num+1
-      if num>5 then
+      if num>4 then
         break
       end
       
@@ -826,9 +830,9 @@ local function everydayservice()
           end
         end
         if alleverynum==0 then
-					mSleep(1000)
-					attack(49,29)
-				end
+          mSleep(1000)
+          attack(49,29)
+        end
         mSleep(1000)
         if alleverynum>1 then
           everydayflag=false
@@ -852,16 +856,30 @@ local function everydayservice()
     end
   end
 end
+--普通和困难切换
+local function changemode(compare1,compare2,normal,hard)
+  if compare1==0 and compare2 then
+		sysLog("hard")
+    return hard
+   
+  else
+		sysLog("normal")
+		return normal
+  end
+end
 myx,myy=2000,2000
 ltx,lty,rbx,rby=0,0,1919,1079
 publicLock=0
 everydayflag=true
+hardflag=true
 init("0", 1); --以当前应用 Home 键在右边初始化
 --while true do
 --	local color=getColor(65,151)
 --	sysLog(color)
 --	mSleep(500)
 --end
+setScreenScale(1080,1920)    --在540*960分辨率的手机中开发了脚本，要在720*1280的设备中运行 -
+
 st,result=showUI("ui.json")
 
 if st==0 then
@@ -878,31 +896,46 @@ local function main()
     elseif checkpublic()==true then
       closepublic()
       
-    elseif checkattackpage() or checkhard() then
+    elseif checkattackpage() or checkhard()[1] then
       everydayservice()
       sysLog("进入选章界面")
-      local chapflag=changechap(result["ComboBox1"]+1,newsearchchap())
+      if (hardflag==false and checkhard()[1]) or checkhard()[1] then
+        attack(checkhard()[2],checkhard()[3])
+        mSleep(1000)
+      end
+      local chapflag=changechap(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),newsearchchap()) 
       if chapflag then
         mSleep(500)
-        if tonumber(result["CheckBoxGroup2"])==0 and checkattackpage() then
+        
+        if tonumber(result["CheckBoxGroup2"])==0 and checkattackpage() and hardflag then
+          
           selecthardmode()
         end
         mSleep(1500)
         local finishcount=0
-        while finishcount<matchnum(result["Edit1"]) do
+        while finishcount<matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"])) do
           mSleep(2000)
-          selectlevel(result["ComboBox1"]+1,result["ComboBox2"]+1)
+          selectlevel(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox2"]+1,result["ComboBox4"]+1))
           shipattack()
           mSleep(500)
           shipattack()
           
-          sysLog("剩余"..(matchnum(result["Edit1"])-finishcount-1).."次")
+          sysLog("剩余"..(matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"]))-finishcount-1).."次")
           findservice()
           finishcount=finishcount+1
           mSleep(5000)
+          
+        end 
+        
+        if tonumber(result["CheckBoxGroup2"])~=0 then
+          hardflag=false
         end
-        sysLog("所有战斗结束")
-        break
+        if hardflag==false then
+          sysLog("所有战斗结束")
+          break
+        end
+        sysLog("所有困难模式战斗结束")
+        sysLog("开始普通战斗")
       else
         checkelse()
       end
