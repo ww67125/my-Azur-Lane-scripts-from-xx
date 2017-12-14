@@ -1,4 +1,14 @@
-
+--检查是否在扫描敌军界面
+local function checkscanner()
+	x, y = findColor({0, 0, 1919, 1079}, 
+	"0|0|0xd67d21,53|8|0x4a2400,83|10|0x847573,1|34|0xf7fbf7",
+	95, 0, 0, 0)
+	if x > -1 then
+		return true
+	else
+		return false
+	end
+end
 --匹配编辑框中的数字
 local function matchnum(edit)
   a,b=string.find(edit,"%d+")
@@ -441,7 +451,7 @@ local function findBoss(ltx,lty,rbx,rby)
     95, 0, 0, 0)
   if x > -1 then
     return {true,x+50,y+10,lock}
-  elseif battlcount>matchnum(result["Edit2"]) or battlcount==matchnum(result["Edit2"]) then
+  elseif battlcount>matchnum(result["Edit2"])-1 then
     local st,va=coroutine.resume(co)
     if va then 
       mSleep(1500)
@@ -539,7 +549,6 @@ local function battlestart()
 end
 --判断是否在战斗界面
 local function checkbattle()
-  sysLog("进入checkbattle方法")
   x, y = findColor({1792, 20, 1884, 112}, 
     "0|0|0x343334,7|2|0x4c4c4c,12|2|0xdfdddb,24|2|0x303230",
     95, 0, 0, 0)
@@ -553,10 +562,10 @@ end
 local function stopservice(targetx,targety)
   
   sysLog("进入阻挡方案")
-  if findme()[2]<myx+10 and findme()[2]>myx-10 and findme()[3]<myy+30 and findme()[3]>myy-30 then
+  if findme()[2]<myx+20 and findme()[2]>myx-20 and findme()[3]<myy+50 and findme()[3]>myy-50 then
     sysLog("有阻挡无法到达")
     
-    sysLog("publicLock:"..publicLock)
+  
     if findme()[2]>targetx then
       ltx=targetx
       rbx=findme()[2]
@@ -577,6 +586,10 @@ local function stopservice(targetx,targety)
     sysLog("遭到轰炸了，继续执行")
     tap(targetx,targety)
     mSleep(1000)
+		stopbutmovecount=stopbutmovecount+1
+		if stopbutmovecount>3 then
+			stopflag=true
+		end
   end
 end
 --准备战斗
@@ -598,7 +611,7 @@ local function preparebattle()
         attack(finishbattle()[2],finishbattle()[3])
         finisherverdaycount=finisherverdaycount+1
         
-        sysLog(finisherverdaycount)
+        sysLog("finisherverdaycount:"..finisherverdaycount)
         
         break
       else
@@ -612,17 +625,19 @@ local function preparebattle()
 end
 --进入战斗逻辑
 local function battleservice(findfunction)
+	stopbutmovecount=0
   stopflag=false
   local anytable=findfunction
   local num=0
   local num1=0
-  tap(anytable[2]+findmorerandom,anytable[3]+findmorerandom)
+  
   local positionx=anytable[2]+findmorerandom
   local positiony=anytable[3]+findmorerandom
-  sysLog(positionx..","..positiony)
-  mSleep(3000)
+	tap(positionx,positiony)
+  sysLog("敌人坐标："..positionx..","..positiony)
+  mSleep(2000)
   while true do
-    
+    mSleep(2000)
     if battlestart()[1] then
       
       mSleep(1000)
@@ -639,9 +654,13 @@ local function battleservice(findfunction)
           sysLog("结束战斗")
           attack(finishbattle()[2],finishbattle()[3])
           battlcount=battlcount+1
-          sysLog(battlcount)
+          sysLog("battlcount:"..battlcount)
           ltx,lty,rbx,rby=0,0,1919,1079
           publicLock=0
+					if bossflag=true {
+						 battlefinish=true
+							sysLog("小关战斗已经结束")
+					}
           break
         else
           
@@ -689,24 +708,29 @@ local function obstructservice(ltx,lty,rbx,rby)
     myy=findme()[3]
   end
   if findquestion(ltx,lty,rbx,rby)[1] then
+		bossflag=false
     sysLog("问号")
     battleservice(findquestion(ltx,lty,rbx,rby))
   elseif findBoss(ltx,lty,rbx,rby)[1] then
+		bossflag=true
     sysLog("boss")
     battleservice(findBoss(ltx,lty,rbx,rby))
-    battlefinish=true
-    sysLog("小关战斗已经结束")
+   
   elseif findmainship(ltx,lty,rbx,rby)[1] then
+		bossflag=false
     sysLog("主力")
     battleservice(findmainship(ltx,lty,rbx,rby))
   elseif findReconship(ltx,lty,rbx,rby)[1] then
+		bossflag=false
     sysLog("侦查")
     battleservice(findReconship(ltx,lty,rbx,rby))
   elseif findCVA(ltx,lty,rbx,rby)[1] then
+		bossflag=false
     sysLog("航母")
     battleservice(findCVA(ltx,lty,rbx,rby))
     
   elseif findMaterialship(ltx,lty,rbx,rby)[1] then
+		bossflag=false
     sysLog("物资")
     battleservice(findMaterialship(ltx,lty,rbx,rby))
   else
@@ -718,7 +742,7 @@ local function obstructservice(ltx,lty,rbx,rby)
 end
 --寻路逻辑
 local function findservice()
-  
+  bossflag=false
   battlcount=0
   selfdisflag=true
   --拖动协同程序
@@ -741,7 +765,9 @@ local function findservice()
   )
   
   while true do
-    
+    if checkscanner()==false then 
+			break
+		end
     battlefinish=false
     sysLog("进入主逻辑")
     obstructservice(ltx,lty,rbx,rby)
@@ -811,17 +837,19 @@ local function everydayservice()
             mSleep(2000)
             preparebattle()
             mSleep(1000)
-            everydaynum1=everydaynum1+1
-            if everydaynum1>2 then
+						if finisherverdaycount==0 then
+							everydaynum1=everydaynum1+1
+						end
+						if everydaynum1>2 then
               sysLog("每日可能已经完成")
-              
+							
               break
-            end
+						end
             
           else
             if everydaynum>2 then
               sysLog("每日可能已经完成")
-              
+							
               break
             end
             everydaynum=everydaynum+1
@@ -829,17 +857,19 @@ local function everydayservice()
             checkelse()
           end
         end
-        if alleverynum==0 then
+				alleverynum=alleverynum+1
+        if finisherverdaycount~=0 or alleverynum==1 then
           mSleep(1000)
           attack(49,29)
+					sysLog("每日退出第一次")
         end
         mSleep(1000)
-        if alleverynum>1 then
+        if alleverynum>2 then
           everydayflag=false
         end
         if tonumber(result["CheckBoxGroup5"])==0 and everydayflag then
           attack(566+math.random(-30,30),528+math.random(-100,100))
-          alleverynum=alleverynum+1
+         
           sysLog("进入下一每日")
         else
           attack(49,29)
@@ -859,12 +889,12 @@ end
 --普通和困难切换
 local function changemode(compare1,compare2,normal,hard)
   if compare1==0 and compare2 then
-		sysLog("hard")
+    sysLog("hard")
     return hard
-   
+    
   else
-		sysLog("normal")
-		return normal
+    sysLog("normal")
+    return normal
   end
 end
 myx,myy=2000,2000
@@ -879,7 +909,11 @@ init("0", 1); --以当前应用 Home 键在右边初始化
 --	mSleep(500)
 --end
 setScreenScale(1080,1920)    --在540*960分辨率的手机中开发了脚本，要在720*1280的设备中运行 -
-
+setSysConfig("isLogFile","1") --将日志写入文件
+--开发助手 
+--Android：/sdcard/com.xxscript.idehelper/tengine/log/user/脚本名.log 
+--叉叉助手 
+--Android：/sdcard/com.xxAssistant/tengine/log/user/脚本id.log 
 st,result=showUI("ui.json")
 
 if st==0 then
@@ -899,7 +933,8 @@ local function main()
     elseif checkattackpage() or checkhard()[1] then
       everydayservice()
       sysLog("进入选章界面")
-      if (hardflag==false and checkhard()[1]) or checkhard()[1] then
+      if (hardflag==false and checkhard()[1]) or (checkhard()[1] and tonumber(result["CheckBoxGroup2"])~=0) then
+				sysLog("切换到普通")
         attack(checkhard()[2],checkhard()[3])
         mSleep(1000)
       end
@@ -962,6 +997,8 @@ main()
 
 
 --	end
+--判断困难次数不够的情况
+--找boss的回合还是有问题
 --困难模式完成
 --每日解决
 --getcolor返回数字
