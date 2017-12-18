@@ -1,18 +1,18 @@
 --检查是否在扫描敌军界面
 local function checkscanner()
-	x, y = findColor({0, 0, 1919, 1079}, 
-	"0|0|0xd67d21,53|8|0x4a2400,83|10|0x847573,1|34|0xf7fbf7",
-	95, 0, 0, 0)
-	if x > -1 then
-		return true
-	else
-		return false
-	end
+  x, y = findColor({0, 0, 1919, 1079}, 
+    "0|0|0xd67d21,53|8|0x4a2400,83|10|0x847573,1|34|0xf7fbf7",
+    95, 0, 0, 0)
+  if x > -1 then
+    return true
+  else
+    return false
+  end
 end
 --匹配编辑框中的数字
 local function matchnum(edit)
   a,b=string.find(edit,"%d+")
-  sysLog("a"..a.."b"..b)
+  sysLog("a："..a.."b："..b)
   c=string.sub(edit,a,b)
   sysLog(c)
   return tonumber(c)
@@ -56,7 +56,7 @@ local chap2={{1225,682},{1125,282},{435,405},{581,818}}
 local chap3={{603,325},{342,742},{1183,204},{922,541}}
 local chap4={{361,459},{637,706},{1238,820},{1169,433}}
 local chap5={{362,551},{1282,801},{1106,543},{889,318}}
-local chap6={{1371,740}}
+local chap6={{1371,740},{1053,511}}
 local chapindex={chap1,chap2,chap3,chap4,chap5,chap6}
 --单击
 local function tap(x,y)
@@ -308,31 +308,12 @@ local function selectlevel(lchap,level)
   local levelx=chapindex[lchap][level][1]
   local levely=chapindex[lchap][level][2]
   local levelrandom=math.random(-50,50)
+	sysLog("小关坐标:"..levelx+levelrandom..","..levely+levelrandom)
   tap(levelx+levelrandom,levely+levelrandom)
   mSleep(500)
   
 end
---捞船出击
-local function shipattack()
-  while true do
-    point = findColors({0, 0, 1919, 1079}, 
-      {
-        {x=0,y=0,color=0x9c3d08},
-        {x=-26,y=12,color=0xffdb4a},
-        {x=-55,y=17,color=0xffffff}
-      },
-      95, 0, 0, 0)
-    if #point ~= 0 then
-      local randomship=math.random(#point)
-      sysLog(randomship)
-      tap(point[randomship].x,point[randomship].y)
-      break
-    else
-      sysLog("没找到捞船出击页面")
-      mSleep(1000)
-    end
-  end
-end
+
 --捞船出击页面确定
 local function checkshipattack()
   point = findColors({0, 0, 1919, 1079}, 
@@ -400,7 +381,29 @@ local function checkelse()
     attack(index()[2],index()[3])
     
   else
-    attack(1116,156)
+    attack(773,17)
+  end
+end
+--捞船出击
+local function shipattack()
+  while true do
+    point = findColors({0, 0, 1919, 1079}, 
+      {
+        {x=0,y=0,color=0x9c3d08},
+        {x=-26,y=12,color=0xffdb4a},
+        {x=-55,y=17,color=0xffffff}
+      },
+      95, 0, 0, 0)
+    if #point ~= 0 then
+      local randomship=math.random(#point)
+      sysLog(randomship)
+      tap(point[randomship].x,point[randomship].y)
+      break
+    else
+      sysLog("没找到捞船出击页面")
+			checkelse()
+      mSleep(1000)
+    end
   end
 end
 --寻找主力
@@ -419,7 +422,7 @@ end
 --寻找侦查
 local function findReconship(ltx,lty,rbx,rby)
   local lock=2
-  sysLog(ltx..lty..rbx..rby)
+  sysLog("寻找侦查时的范围:"..ltx..","..lty..","..rbx..","..rby)
   x, y = findColor({ltx,lty,rbx,rby}, 
     "0|0|0xe6e7e6,-25|14|0xe6e3e6,32|28|0x847563,-57|33|0x4a4552",
     96, 0, 0, 0)
@@ -453,7 +456,7 @@ local function findBoss(ltx,lty,rbx,rby)
     return {true,x+50,y+10,lock}
   elseif battlcount>matchnum(result["Edit2"])-1 then
     local st,va=coroutine.resume(co)
-    if va then 
+    if va or battlcount>matchnum(result["Edit2"])-1 then 
       mSleep(1500)
       return findBoss(ltx,lty,rbx,rby)
     else
@@ -522,7 +525,7 @@ local function selfdiscipline(selfdis)
         local selfrandom=math.random(-20,20)
         tap(209+selfrandom,80+selfrandom)	
         selfdisflag=false
-      elseif color==8687244 then 
+      elseif color~=16777215 then 
         selfdisflag=false
       end
     else
@@ -565,31 +568,32 @@ local function stopservice(targetx,targety)
   if findme()[2]<myx+20 and findme()[2]>myx-20 and findme()[3]<myy+50 and findme()[3]>myy-50 then
     sysLog("有阻挡无法到达")
     
-  
+    
     if findme()[2]>targetx then
-      ltx=targetx
+      ltx=targetx+100
       rbx=findme()[2]
     else
       ltx=findme()[2]
-      rbx=targetx
+      rbx=targetx-100
     end
     if findme()[3]>targety then
-      lty=targety
+      lty=targety+100
       rby=findme()[3]
     else
       lty=findme()[3]
-      rby=targety
+      rby=targety-100
     end
-    sysLog(ltx..lty..rbx..rby)
+    sysLog("改变的大小："..ltx..","..lty..","..rbx..","..rby)
+		battlcount=0
     stopflag=true
   else
     sysLog("遭到轰炸了，继续执行")
     tap(targetx,targety)
     mSleep(1000)
-		stopbutmovecount=stopbutmovecount+1
-		if stopbutmovecount>3 then
-			stopflag=true
-		end
+    stopbutmovecount=stopbutmovecount+1
+    if stopbutmovecount>3 then
+      stopflag=true
+    end
   end
 end
 --准备战斗
@@ -603,7 +607,7 @@ local function preparebattle()
     while true do
       if checkbattle() then
         
-        
+				mSleep(2000);
         sysLog("在battle中")
         selfdiscipline(result["CheckBoxGroup1"]) 
       elseif finishbattle()[1] then
@@ -625,7 +629,7 @@ local function preparebattle()
 end
 --进入战斗逻辑
 local function battleservice(findfunction)
-	stopbutmovecount=0
+  stopbutmovecount=0
   stopflag=false
   local anytable=findfunction
   local num=0
@@ -633,7 +637,7 @@ local function battleservice(findfunction)
   
   local positionx=anytable[2]+findmorerandom
   local positiony=anytable[3]+findmorerandom
-	tap(positionx,positiony)
+  tap(positionx,positiony)
   sysLog("敌人坐标："..positionx..","..positiony)
   mSleep(2000)
   while true do
@@ -650,6 +654,7 @@ local function battleservice(findfunction)
           
           sysLog("在battle中")
           selfdiscipline(result["CheckBoxGroup1"]) 
+					mSleep(2000)
         elseif finishbattle()[1] then
           sysLog("结束战斗")
           attack(finishbattle()[2],finishbattle()[3])
@@ -657,10 +662,10 @@ local function battleservice(findfunction)
           sysLog("battlcount:"..battlcount)
           ltx,lty,rbx,rby=0,0,1919,1079
           publicLock=0
-					if bossflag=true {
-						 battlefinish=true
-							sysLog("小关战斗已经结束")
-					}
+          if bossflag then
+            battlefinish=true
+            sysLog("小关战斗已经结束")
+          end
           break
         else
           
@@ -699,7 +704,11 @@ local function obstructservice(ltx,lty,rbx,rby)
   --  local findReconshiptable={findReconship(ltx,lty,rbx,rby)}
   --  local findCVAtable={findCVA(ltx,lty,rbx,rby)}
   --  local findMaterialshiptable={findMaterialship(ltx,lty,rbx,rby)}
-  
+  if obscount>3 then
+		ltx,lty,rbx,rby=0,0,1919,1079
+		obscount=0
+		sysLog("阻挡方案失败，重新开始")
+	end
   findmorerandom=math.random(10)
   mSleep(1000) 
   if findme()[1] then
@@ -708,43 +717,46 @@ local function obstructservice(ltx,lty,rbx,rby)
     myy=findme()[3]
   end
   if findquestion(ltx,lty,rbx,rby)[1] then
-		bossflag=false
+    bossflag=false
     sysLog("问号")
     battleservice(findquestion(ltx,lty,rbx,rby))
   elseif findBoss(ltx,lty,rbx,rby)[1] then
-		bossflag=true
+    bossflag=true
     sysLog("boss")
     battleservice(findBoss(ltx,lty,rbx,rby))
-   
+    
   elseif findmainship(ltx,lty,rbx,rby)[1] then
-		bossflag=false
+    bossflag=false
     sysLog("主力")
     battleservice(findmainship(ltx,lty,rbx,rby))
   elseif findReconship(ltx,lty,rbx,rby)[1] then
-		bossflag=false
+    bossflag=false
     sysLog("侦查")
     battleservice(findReconship(ltx,lty,rbx,rby))
   elseif findCVA(ltx,lty,rbx,rby)[1] then
-		bossflag=false
+    bossflag=false
     sysLog("航母")
     battleservice(findCVA(ltx,lty,rbx,rby))
     
   elseif findMaterialship(ltx,lty,rbx,rby)[1] then
-		bossflag=false
+    bossflag=false
     sysLog("物资")
     battleservice(findMaterialship(ltx,lty,rbx,rby))
   else
     sysLog("什么都没找到")
     checkelse()
-    coroutine.resume(co)
+		if ltx~=0 then
+			obscount=obscount+1
+		end
     mSleep(1000)
   end
 end
 --寻路逻辑
 local function findservice()
   bossflag=false
-  battlcount=0
+	battlcount=0
   selfdisflag=true
+	obscount=0
   --拖动协同程序
   co=coroutine.create(function()
       while true do
@@ -763,11 +775,9 @@ local function findservice()
       end
     end
   )
-  
+
   while true do
-    if checkscanner()==false then 
-			break
-		end
+		mSleep(1000)
     battlefinish=false
     sysLog("进入主逻辑")
     obstructservice(ltx,lty,rbx,rby)
@@ -816,6 +826,7 @@ end
 
 --每日总逻辑
 local function everydayservice()
+  selfdisflag=true
   if tonumber(result["CheckBoxGroup4"])==0 and everydayflag then
     local alleverynum=0
     while everydayflag do
@@ -836,20 +847,20 @@ local function everydayservice()
             attack(879+math.random(-100,100),314+math.random(-50,50))
             mSleep(2000)
             preparebattle()
-            mSleep(1000)
-						if finisherverdaycount==0 then
-							everydaynum1=everydaynum1+1
-						end
-						if everydaynum1>2 then
+            mSleep(2000)
+            if finisherverdaycount==0 then
+              everydaynum1=everydaynum1+1
+            end
+            if everydaynum1>2 then
               sysLog("每日可能已经完成")
-							
+              
               break
-						end
+            end
             
           else
             if everydaynum>2 then
               sysLog("每日可能已经完成")
-							
+              
               break
             end
             everydaynum=everydaynum+1
@@ -857,11 +868,11 @@ local function everydayservice()
             checkelse()
           end
         end
-				alleverynum=alleverynum+1
-        if finisherverdaycount~=0 or alleverynum==1 then
-          mSleep(1000)
+        alleverynum=alleverynum+1
+        if finisherverdaycount~=0 or alleverynum==1 or tonumber(result["CheckBoxGroup5"])==0 then
+          mSleep(3000)
           attack(49,29)
-					sysLog("每日退出第一次")
+          sysLog("每日退出第一次")
         end
         mSleep(1000)
         if alleverynum>2 then
@@ -869,9 +880,10 @@ local function everydayservice()
         end
         if tonumber(result["CheckBoxGroup5"])==0 and everydayflag then
           attack(566+math.random(-30,30),528+math.random(-100,100))
-         
+          
           sysLog("进入下一每日")
         else
+          mSleep(1000)
           attack(49,29)
           sysLog("每日正常完成")
           everydayflag=false
@@ -895,6 +907,52 @@ local function changemode(compare1,compare2,normal,hard)
   else
     sysLog("normal")
     return normal
+  end
+end
+--捞船总逻辑
+local function Fishingboatallservice()
+  sysLog("进入选章界面")
+  if (hardflag==false and checkhard()[1]) or (checkhard()[1] and tonumber(result["CheckBoxGroup2"])~=0) then
+    sysLog("切换到普通")
+    attack(checkhard()[2],checkhard()[3])
+    mSleep(1000)
+  end
+  local chapflag=changechap(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),newsearchchap()) 
+  if chapflag then
+    mSleep(1000)
+    
+    if tonumber(result["CheckBoxGroup2"])==0 and checkattackpage() and hardflag then
+			sysLog("判断是否需要进入困难")
+		
+      selecthardmode()
+    end
+    mSleep(1500)
+    local finishcount=0
+    while finishcount<matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"])) do
+      mSleep(2000)
+			checkelse()
+      selectlevel(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox2"]+1,result["ComboBox4"]+1))
+      shipattack()
+      mSleep(500)
+      shipattack()
+      
+      sysLog("剩余"..(matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"]))-finishcount-1).."次")
+      findservice()
+      finishcount=finishcount+1
+      mSleep(5000)
+      
+    end 
+    
+    if tonumber(result["CheckBoxGroup2"])~=0 then
+      hardflag=false
+    end
+    
+    if hardflag then
+      sysLog("所有困难模式战斗结束")
+      sysLog("开始普通战斗")
+    end
+  else
+    checkelse()
   end
 end
 myx,myy=2000,2000
@@ -932,48 +990,12 @@ local function main()
       
     elseif checkattackpage() or checkhard()[1] then
       everydayservice()
-      sysLog("进入选章界面")
-      if (hardflag==false and checkhard()[1]) or (checkhard()[1] and tonumber(result["CheckBoxGroup2"])~=0) then
-				sysLog("切换到普通")
-        attack(checkhard()[2],checkhard()[3])
-        mSleep(1000)
+      Fishingboatallservice()
+      if hardflag==false then
+        sysLog("所有战斗结束")
+        break
       end
-      local chapflag=changechap(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),newsearchchap()) 
-      if chapflag then
-        mSleep(500)
-        
-        if tonumber(result["CheckBoxGroup2"])==0 and checkattackpage() and hardflag then
-          
-          selecthardmode()
-        end
-        mSleep(1500)
-        local finishcount=0
-        while finishcount<matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"])) do
-          mSleep(2000)
-          selectlevel(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox2"]+1,result["ComboBox4"]+1))
-          shipattack()
-          mSleep(500)
-          shipattack()
-          
-          sysLog("剩余"..(matchnum(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["Edit1"],result["Edit3"]))-finishcount-1).."次")
-          findservice()
-          finishcount=finishcount+1
-          mSleep(5000)
-          
-        end 
-        
-        if tonumber(result["CheckBoxGroup2"])~=0 then
-          hardflag=false
-        end
-        if hardflag==false then
-          sysLog("所有战斗结束")
-          break
-        end
-        sysLog("所有困难模式战斗结束")
-        sysLog("开始普通战斗")
-      else
-        checkelse()
-      end
+      hardflag=false
     else
       toast("请返回主界面")
       
@@ -997,6 +1019,7 @@ main()
 
 
 --	end
+--尼玛屎一样的代码自己都不想看
 --判断困难次数不够的情况
 --找boss的回合还是有问题
 --困难模式完成
