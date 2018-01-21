@@ -210,6 +210,38 @@
 	              "type" : "Edit"
               }
 	      ]
+      },
+	  {
+	      "text" : "特殊活动",
+	      "type" : "Page",
+	      "views" : [
+			{
+	            "id" : "CheckBoxGroup7",
+	            "list" : "围剿斯皮尔伯爵",
+	            "select" : "0@2",
+	            "size" : "30",
+	            "type" : "CheckBoxGroup",
+	            "orientation" : "horizontal",
+	            "color" : "0,0,225"
+            },
+			{
+	            "id" : "ComboBox5",
+	            "list" : "sp1,sp2,sp3",
+	            "select" : "0",
+	            "size" : "30",
+	            "type" : "ComboBox"
+            },
+			{
+	            "id" : "Edit5",
+	            "align" : "left",
+	            "color" : "0,0,0",
+	            "kbtype" : "number",
+	            "prompt" : "进行几次战斗",
+	            "size" : "25",
+	            "text" : "0",
+	            "type" : "Edit"
+            }
+	      ]
       }
    ]
 }

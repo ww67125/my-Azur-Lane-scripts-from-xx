@@ -1,4 +1,4 @@
---检查是否在扫描敌军界面
+stopAudio()--检查是否在扫描敌军界面
 local function checkscanner()
 	x, y = findColor({0, 0, 1919, 1079}, 
 		"0|0|0xd67d21,53|8|0x4a2400,83|10|0x847573,1|34|0xf7fbf7",
@@ -57,8 +57,10 @@ local chap2={{1225,682},{1125,282},{435,405},{581,818}}
 local chap3={{603,325},{342,742},{1183,204},{922,541}}
 local chap4={{361,459},{637,706},{1238,820},{1169,433}}
 local chap5={{362,551},{1282,801},{1106,543},{889,318}}
-local chap6={{1371,740},{1053,511}}
-local chapindex={chap1,chap2,chap3,chap4,chap5,chap6}
+local chap6={{1371,740},{1053,511},{640,321}}
+--围剿斯佩伯爵
+local chapex={{1368,454},{870,790},{588,369}}
+local chapindex={chap1,chap2,chap3,chap4,chap5,chap6,chapex}
 --单击
 local function tap(x,y)
 	
@@ -383,6 +385,7 @@ local function checkelse()
 	elseif loss()[1] then
 		sysLog("断连")
 		tap(loss()[2]+math.random(-5,5),loss()[3]+math.random(-5,5))
+		mSleep(3000)
 	elseif avoid()[1] then
 		sysLog("规避")
 		tap(avoid()[2]+math.random(-5,5),avoid()[3]+math.random(-5,5))
@@ -422,13 +425,26 @@ local function shipattack()
 	end
 end
 --寻找主力
+local function findExmainship(ltx,lty,rbx,rby)
+	local lock=1
+	x, y = findColor({ltx, lty, rbx, rby}, 
+		"0|0|0xa41029,-52|42|0xd6d6de,-103|32|0x6b696b,28|-28|0x848184",
+		95, 0, 0, 0)
+	if x > -1 then
+		return {true,(x-40),y,lock}
+	else
+		return {false,0,0}
+	end
+	
+end
+--寻找活动主力
 local function findmainship(ltx,lty,rbx,rby)
 	local lock=1
 	x, y = findColor({ltx, lty, rbx, rby}, 
 		"0|0|0x831831,63|46|0x5a555b,-7|75|0xded6de",
 		95, 0, 0, 0)
 	if x > -1 then
-		return {true,x+10,y+40,lock}
+		return {true,(x+10),(y+40),lock}
 	else
 		return {false,0,0}
 	end
@@ -444,7 +460,7 @@ local function findReconship(ltx,lty,rbx,rby)
 	if x > -1 then
 		sysLog("reshipx:"..x)
 		sysLog("reshipy:"..y)
-		return {true,x+40,y,lock}
+		return {true,(x+40),y,lock}
 	else
 		return {false,0,0}
 	end
@@ -454,9 +470,9 @@ local function findCVA(ltx,lty,rbx,rby)
 	local lock=3
 	x, y = findColor({ltx,lty,rbx,rby}, 
 		"0|0|0x295450,11|0|0xe1cb99,23|-11|0x145e57",
-		96, 0, 0, 0)
+		95, 0, 0, 0)
 	if x > -1 then
-		return {true,x,y+20,lock}
+		return {true,x,(y+20),lock}
 	else
 		return {false,0,0}
 	end
@@ -469,13 +485,13 @@ local function findBoss(ltx,lty,rbx,rby)
 		"0|0|0xff4d52,17|-17|0x422431,39|-5|0xee4d52,17|25|0x7b0410",
 		95, 0, 0, 0)
 	if x > -1 then
-		return {true,x+50,y+10,lock}
+		return {true,(x+50),(y+10),lock}
 	elseif battlcount>matchnum(result["Edit2"])-1 then
 		local st,va=coroutine.resume(co)
-		if va==false then
+		if va[1]==false then
 			vacount=vacount+1;
 		end
-		if vacount==1 or va then 
+		if vacount==1 or va[1] then 
 			mSleep(1500)
 			return findBoss(ltx,lty,rbx,rby)
 		else
@@ -492,7 +508,7 @@ local function findMaterialship(ltx,lty,rbx,rby)
 		"0|0|0xd6b25a,11|1|0xd6c273,35|-34|0x635d63,40|-46|0x9c455a",
 		95, 0, 0, 0)
 	if x > -1 then
-		return {true,x+30,y,lock}
+		return {true,(x+30),y,lock}
 	else
 		return {false,0,0}
 	end
@@ -503,7 +519,7 @@ local function findquestion(ltx,lty,rbx,rby)
 		"0|0|0x91fff5,-3|-11|0x2e2e2e,-2|-14|0x717171,2|-31|0x97fff6,35|-6|0xebebeb",
 		95, 0, 0, 0)
 	if x > -1 then
-		return {true,x,y+80}
+		return {true,x,(y+80)}
 	else
 		return {false,0,0}
 	end
@@ -515,7 +531,7 @@ local function findammunition()
 		95, 0, 0, 0)
 	if x > -1 then
 		
-		return {true,x+5,y+130}
+		return {true,(x+5),(y+130)}
 	else
 		return {false,0,0}
 	end
@@ -524,9 +540,10 @@ end
 local function findme()
 	x, y = findColor({0, 0, 1919, 1079}, 
 		"0|0|0x008e31,32|0|0x005921,1|22|0x19ff6b,31|20|0x7bffa4",
-		95, 0, 0, 0)
+		96, 0, 0, 0)
 	if x > -1 then
-		return {true,x+30,y+300}
+		sysLog(x..","..y)
+		return {true,(x+30),(y+300)}
 	else
 		return {false,0,0}             
 	end
@@ -583,39 +600,58 @@ local function checkbattle()
 end
 --阻挡方案
 local function stopservice(targetx,targety)
-	
+	local stopy=vector
+	local meflag
+	local mex=0
+	local mey=0
 	sysLog("进入阻挡方案")
-	if findme()[2]<myx+20 and findme()[2]>myx-20 and findme()[3]<myy+50 and findme()[3]>myy-50 then
+	while true do
+		local fmtable=findme()
+		 meflag=fmtable[1]
+		 mex=fmtable[2]
+		 mey=fmtable[3]
+		if meflag then
+			sysLog("找到自己了")
+			sysLog("我的坐标："..mex..","..(mey+stopy))
+			break
+		else
+			local st,va=coroutine.resume(co)
+			stopy=va[2]+stopy
+			checkelse()
+			sysLog("找一下自己")
+		end
+	end
+	if mex<(myx+20) and mex>(myx-20) and (mey+stopy)<(myy+50) and (mey+stopy)>(myy-50) then
 		sysLog("有阻挡无法到达")
 		
 		
-		if findme()[2]>targetx then
+		if myx>targetx then
 			ltx=targetx-150
-			rbx=findme()[2]+150
+			rbx=myx+150
 			
 		else
-			ltx=findme()[2]-150
+			ltx=myx-150
 			rbx=targetx+150
 			
 		end
-		if findme()[3]>targety then
+		if myy>targety then
 			lty=targety-150
-			rby=findme()[3]+150
+			rby=myy+150
 		else
-			lty=findme()[3]-150
+			lty=myy-150
 			rby=targety+150
 		end
-		if abs(findme()[2]-targetx)>abs(findme()[3]-targety) then
-			if (findme()[2]-targetx)>0 then
+		if math.abs(myx-targetx)>math.abs(myy-targety) then
+			if (myx-targetx)>0 then
 				ltx=ltx+255
 			else
 				rbx=rbx-255
 			end
 		else
-			if (findme()[3]-targety)>0 then
-				lty=lty-255
+			if (myy-targety)>0 then
+				lty=lty+255
 			else
-				rby=rby+255
+				rby=rby-255
 			end
 			
 		end
@@ -684,10 +720,8 @@ local function battleservice(findfunction)
 	sysLog("敌人坐标："..positionx..","..positiony)
 	mSleep(2000)
 	while true do
-		mSleep(2000)
+		mSleep(3000)
 		if battlestart()[1] then
-			
-			mSleep(1000)
 			sysLog("点击开始战斗")
 			attack(battlestart()[2],battlestart()[3])
 			
@@ -704,7 +738,7 @@ local function battleservice(findfunction)
 					attack(finishbattle()[2],finishbattle()[3])
 					battlcount=battlcount+1
 					sysLog("battlcount:"..battlcount)
-					ltx,lty,rbx,rby=0,0,1919,1079
+					ltx,lty,rbx,rby=0,70,1919,1079
 					publicLock=0
 					if bossflag then
 						battlefinish=true
@@ -722,10 +756,10 @@ local function battleservice(findfunction)
 				end
 			end
 			break
-		elseif findme()[1] then
+		elseif findme()[1] and checkscanner()[1] then
 			num1=num1+1
 			if num1 <5 then
-				stopservice(anytable[2],anytable[3])
+				stopservice(anytable[2],anytable[3]+vector)
 				if stopflag then
 					break
 				end
@@ -753,25 +787,33 @@ local function obstructservice(ltx,lty,rbx,rby)
 	--  local findReconshiptable={findReconship(ltx,lty,rbx,rby)}
 	--  local findCVAtable={findCVA(ltx,lty,rbx,rby)}
 	--  local findMaterialshiptable={findMaterialship(ltx,lty,rbx,rby)}
-	vacount=0;
+	vacount=0
 	if obscount>3 then
-		ltx,lty,rbx,rby=0,0,1919,1079
+		ltx,lty,rbx,rby=0,70,1919,1079
 		obscount=0
 		sysLog("阻挡方案失败，重新开始")
 	end
 	findmorerandom=math.random(10)
 	mSleep(1000) 
-	if findme()[1] then
-		sysLog("找到自己了")
-		myx=findme()[2]
-		myy=findme()[3]
-		findmeflag=false
-	end
-	while findme()[1]==false and findmeflag do
-		if findme()[1] then
+	--	if findme()[1] then
+	--		sysLog("找到自己了")
+	--		myx=findme()[2]
+	--		myy=findme()[3]
+	--		sysLog("我的坐标："..myx..","..myy)
+	--		vector=0
+	--		findmeflag=false
+	--	end
+	while findmeflag do
+		local fmtable=findme()
+		local meflag=fmtable[1]
+		local mex=fmtable[2]
+		local mey=fmtable[3]
+		if meflag then
 			sysLog("找到自己了")
-			myx=findme()[2]
-			myy=findme()[3]
+			myx=mex
+			myy=mey
+			sysLog("我的坐标："..myx..","..myy)
+			vector=0
 			findmeflag=false
 		else
 			coroutine.resume(co)
@@ -798,10 +840,14 @@ local function obstructservice(ltx,lty,rbx,rby)
 		sysLog("boss")
 		battleservice(findBoss(ltx,lty,rbx,rby))
 		
-	elseif findmainship(ltx,lty,rbx,rby)[1] then
+	elseif findmainship(ltx,lty,rbx,rby)[1] or findExmainship(ltx,lty,rbx,rby)[1]then
 		bossflag=false
 		sysLog("主力")
-		battleservice(findmainship(ltx,lty,rbx,rby))
+		if findmainship(ltx,lty,rbx,rby)[1] then
+			battleservice(findmainship(ltx,lty,rbx,rby))
+		else
+			battleservice(findExmainship(ltx,lty,rbx,rby))
+		end
 	elseif findReconship(ltx,lty,rbx,rby)[1] then
 		bossflag=false
 		sysLog("侦查")
@@ -821,7 +867,8 @@ local function obstructservice(ltx,lty,rbx,rby)
 		if ltx~=0 then
 			obscount=obscount+1
 		end
-		coroutine.resume(co)
+		local st,va=coroutine.resume(co)
+		vector=vector+va[2]
 		mSleep(1000)
 	end
 end
@@ -838,16 +885,16 @@ local function findservice()
 			while true do
 				sysLog("向上拖动")
 				touchMoveUp()
-				coroutine.yield(true)
+				coroutine.yield({true,200})
 				sysLog("向下拖动")
 				touchMoveDown()
-				coroutine.yield(true)
+				coroutine.yield({true,-200})
 				sysLog("向下拖动")
 				touchMoveDown()
-				coroutine.yield(true)
+				coroutine.yield({true,-200})
 				sysLog("向上拖动")
 				touchMoveUp()
-				coroutine.yield(false)
+				coroutine.yield({false,200})
 			end
 		end
 	)
@@ -987,12 +1034,16 @@ local function pvpservice()
 			end
 		end
 		
-		mSleep(2000)
-		if checkpvpselect() then
-			attack(49,29)
+		
+		while true do
+			mSleep(2000)
+			if checkpvpselect() then
+				attack(49,29)
+				sysLog("演习应该已经完成")
+				break
+			end
 		end
 		
-		sysLog("演习应该已经完成")
 	end
 end
 --每日总逻辑
@@ -1042,8 +1093,9 @@ local function everydayservice()
 					end
 				end
 				alleverynum=alleverynum+1
+				mSleep(1000)
 				if anyfinishcount~=0 or alleverynum==1 or tonumber(result["CheckBoxGroup5"])==0 then
-					mSleep(3000)
+					mSleep(2000)
 					attack(49,29)
 					sysLog("每日退出第一次")
 				end
@@ -1052,9 +1104,16 @@ local function everydayservice()
 					everydayflag=false
 				end
 				if tonumber(result["CheckBoxGroup5"])==0 and everydayflag then
-					attack(566+math.random(-30,30),528+math.random(-100,100))
-					
+					if anyfinishcount~=0 then
+						for var=1,alleverynum do
+							attack(566+math.random(-30,30),528+math.random(-100,100))
+							mSleep(500)
+						end
+					else
+						attack(566+math.random(-30,30),528+math.random(-100,100))
+					end
 					sysLog("进入下一每日")
+					anyfinishcount=0
 				else
 					mSleep(1000)
 					attack(49,29)
@@ -1090,10 +1149,10 @@ local function Fishingboatallservice()
 		attack(checkhard()[2],checkhard()[3])
 		mSleep(1000)
 	end
-	mSleep(1000)
+	mSleep(1500)
 	local chapflag=changechap(changemode(tonumber(result["CheckBoxGroup2"]),hardflag,result["ComboBox1"]+1,result["ComboBox3"]+1),newsearchchap()) 
 	if chapflag then
-		mSleep(2000)
+		mSleep(3000)
 		
 		if tonumber(result["CheckBoxGroup2"])==0 and checkattackpage() and hardflag then
 			sysLog("判断是否需要进入困难")
@@ -1133,11 +1192,59 @@ local function Fishingboatallservice()
 		end
 	end
 end
+--斯佩伯爵入口
+local function findExEter()
+	x, y = findColor({0, 0, 1919, 1079}, 
+		"0|0|0xeedfd6,23|-12|0xbd1c31,9|-10|0xc5eff7,-25|-7|0xc5efef,-8|18|0xbd1021,-4|30|0x000000",
+		95, 0, 0, 0)
+	if x > -1 then
+		return {true,x,y}
+	else
+		return {false}
+	end
+end
+--围剿斯佩伯爵逻辑
+local function battleofEX()
+	if tonumber(result["CheckBoxGroup7"])==0 then
+		while true do
+			if findExEter() then
+				sysLog("找到特殊活动")
+				attack(findExEter()[2]+math.random(-30,30),findExEter()[3]+math.random(-30,30))
+				mSleep(2000)
+				sysLog("进入特殊活动")
+				x, y = findColor({0, 0, 1919, 1079}, 
+					"0|0|0x8c4d42,23|8|0x191821,61|27|0xb57563,72|34|0xa44142,21|62|0x211c29",
+					95, 0, 0, 0)
+				if x > -1 then
+					finishcount=0
+					while finishcount<matchnum(result["Edit5"]) do
+						selectlevel(7,result["ComboBox5"]+1)
+						shipattack()
+						mSleep(500)
+						shipattack()
+						sysLog("剩余"..(matchnum(result["Edit5"]-finishcount-1).."次"))
+						findservice()
+						finishcount=finishcount+1
+						mSleep(5000)
+					end
+					sysLog("活动关卡完成")
+					break
+				else
+					checkelse()
+				end
+			else
+				sysLog("没找到特殊活动入口")
+				checkelse()
+			end
+		end
+	end
+end
 myx,myy=2000,2000
-ltx,lty,rbx,rby=0,0,1919,1079
+ltx,lty,rbx,rby=0,70,1919,1079
 publicLock=0
 everydayflag=true
 hardflag=true
+vector=0
 init("0", 1); --以当前应用 Home 键在右边初始化
 --while true do
 --	local color=getColor(65,151)
@@ -1170,12 +1277,15 @@ local function main()
 			everydayservice()	
 			
 			pvpservice()
+			
 			Fishingboatallservice()
+			battleofEX()
 			if hardflag==false then
 				sysLog("所有战斗结束")
 				break
 			end
 			hardflag=false
+			
 		elseif checkscanner()[1] then
 			sysLog("扫描敌军界面")
 			
@@ -1210,6 +1320,7 @@ main()
 
 --	end
 --尼玛屎一样的代码自己都不想看
+--每次拖动应该在敌人基础坐标上加上拖动距离
 --判断困难次数不够的情况
 --找boss的回合还是有问题
 --困难模式完成
